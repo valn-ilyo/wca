@@ -2,11 +2,17 @@
   <v-container
     class="fill-height d-flex flex-column align-center justify-center pa-4"
   >
-    <v-sheet width="100%" max-width="480" rounded="lg" elevation="0">
+    <v-sheet
+      width="100%"
+      max-width="480"
+      rounded="lg"
+      elevation="0"
+      color="transparent"
+    >
       <v-row justify="center" class="mb-2">
         <v-col cols="12" class="text-center">
           <img src="/icon.svg" alt="WhatsApp" height="44" class="mb-2" />
-          <h1 class="text-h6 text-primary font-weight-bold">
+          <h1 class="text-headline-small text-primary font-weight-bold">
             WHATSAPP CHAT ANALYZER
           </h1>
         </v-col>
@@ -24,6 +30,7 @@
           subtitle=".zip or .txt"
           browse-text="Browse files"
           divider-text="or"
+          color="surface-variant"
         />
       </v-card-text>
 
@@ -43,7 +50,7 @@
         <v-btn
           :loading="analyzing"
           :disabled="!file || (Array.isArray(file) && file.length === 0)"
-          color="secondary"
+          color="primary"
           variant="flat"
           size="large"
           prepend-icon="mdi-file-search"
@@ -129,3 +136,15 @@ function analyzeChatContent(content: string): void {
   router.push("/result");
 }
 </script>
+
+<style scoped>
+:deep(.v-file-upload-item) {
+  background: transparent !important;
+}
+:deep(.v-file-upload-item .v-avatar) {
+  background: rgb(var(--v-theme-surface-variant)) !important;
+}
+:deep(.v-file-upload .v-list) {
+  background: transparent !important;
+}
+</style>
