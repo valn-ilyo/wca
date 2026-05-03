@@ -15,7 +15,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,otf,webp,woff2}"],
       },
       manifest: {
-        name: "WhatsApp Chat Analyzer",
+        name: "WCA",
         short_name: "WCA",
         theme_color: "#C8102E",
         background_color: "#F9F6F1",
@@ -46,7 +46,13 @@ export default defineConfig({
             files: [
               {
                 name: "chat",
-                accept: ["text/plain", ".txt", "application/zip", ".zip"],
+                accept: [
+                  "text/plain",
+                  ".txt",
+                  "application/zip",
+                  ".zip",
+                  "application/octet-stream",
+                ],
               },
             ],
           },

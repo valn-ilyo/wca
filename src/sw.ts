@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 import { clientsClaim } from "workbox-core";
 import {
   precacheAndRoute,
@@ -34,7 +35,9 @@ self.addEventListener("fetch", (event: FetchEvent) => {
   event.respondWith(
     (async () => {
       const formData = await event.request.formData();
-      const file = formData.get("chat") as File | null;
+      const file =
+        (formData.get("chat") as File | null) ??
+        ([...formData.values()].find((v) => v instanceof File) as File | null);
       if (file) {
         const cache = await caches.open("share-target-v1");
         await cache.put(

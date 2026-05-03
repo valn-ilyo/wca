@@ -241,14 +241,6 @@ onMounted(async () => {
     const filename = decodeURIComponent(
       response.headers.get("X-Filename") ?? "chat-export",
     );
-
-    // ── DEBUG: show raw file info so we can see what WhatsApp actually sends ──
-    const rawText = await blob.text();
-    const preview = rawText.split("\n").slice(0, 5).join(" | ");
-    errorMsg.value = `[DEBUG] name=${filename} type=${blob.type}\n${preview}`;
-    return; // ← remove this entire DEBUG block once format is confirmed
-    // ── END DEBUG ──
-
     file.value = new File([blob], filename, { type: blob.type });
     await processFile();
   } catch {
