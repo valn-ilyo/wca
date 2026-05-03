@@ -153,14 +153,135 @@
       </template>
     </v-card>
 
-    <v-btn
-      href="https://www.instagram.com/valn_ilyo"
-      target="_blank"
-      rel="noopener"
-      icon="mdi-instagram"
-      variant="text"
-      class="mt-4"
-    />
+    <!-- Help + Instagram row -->
+    <div class="d-flex align-center gap-2 mt-2">
+      <v-btn
+        variant="text"
+        size="small"
+        prepend-icon="mdi-help-circle-outline"
+        color="medium-emphasis"
+        @click="helpDialog = true"
+      >
+        How to export
+      </v-btn>
+      <v-btn
+        href="https://www.instagram.com/valn_ilyo"
+        target="_blank"
+        rel="noopener"
+        icon="mdi-instagram"
+        variant="text"
+        size="small"
+      />
+    </div>
+
+    <!-- Help dialog -->
+    <v-dialog v-model="helpDialog" max-width="440">
+      <v-card rounded="xl">
+        <v-card-item>
+          <template #prepend>
+            <v-icon icon="mdi-chat-question-outline" color="primary" />
+          </template>
+          <v-card-title class="text-body-1 font-weight-semibold">
+            How to export a chat
+          </v-card-title>
+          <template #append>
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              size="small"
+              @click="helpDialog = false"
+            />
+          </template>
+        </v-card-item>
+
+        <!-- Installed PWA: share directly -->
+        <template v-if="isPwa">
+          <v-card-text class="pt-0">
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              Since you have WCA installed, you can share directly from
+              WhatsApp:
+            </p>
+            <v-list density="compact" bg-color="transparent" class="pa-0">
+              <v-list-item
+                class="px-0"
+                min-height="32"
+                v-for="(step, i) in pwaSteps"
+                :key="i"
+              >
+                <template #prepend>
+                  <v-avatar
+                    size="22"
+                    color="primary"
+                    class="mr-3 text-caption font-weight-bold"
+                  >
+                    {{ i + 1 }}
+                  </v-avatar>
+                </template>
+                <v-list-item-title
+                  class="text-body-2 text-wrap"
+                  v-html="step"
+                />
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </template>
+
+        <!-- Browser: browse manually -->
+        <template v-else>
+          <v-card-text class="pt-0">
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              Export the chat from WhatsApp, then load it here:
+            </p>
+            <v-list density="compact" bg-color="transparent" class="pa-0">
+              <v-list-item
+                class="px-0"
+                min-height="32"
+                v-for="(step, i) in browserSteps"
+                :key="i"
+              >
+                <template #prepend>
+                  <v-avatar
+                    size="22"
+                    color="primary"
+                    class="mr-3 text-caption font-weight-bold"
+                  >
+                    {{ i + 1 }}
+                  </v-avatar>
+                </template>
+                <v-list-item-title
+                  class="text-body-2 text-wrap"
+                  v-html="step"
+                />
+              </v-list-item>
+            </v-list>
+            <v-alert
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mt-4"
+              icon="mdi-lightning-bolt"
+            >
+              <span class="text-body-2">
+                Install WCA as an app to share chats directly from WhatsApp — no
+                browsing needed.
+              </span>
+            </v-alert>
+          </v-card-text>
+        </template>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            variant="flat"
+            color="primary"
+            size="small"
+            @click="helpDialog = false"
+          >
+            Got it
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -180,11 +301,27 @@ const chatStore = useChatStore();
 const file = ref<File | File[] | undefined>(undefined);
 const errorMsg = ref("");
 const analyzing = ref(false);
+const helpDialog = ref(false);
+const isPwa = ref(false);
 
 // PWA install prompt
 const installPrompt = ref<Event | null>(null);
 const isIos = ref(false);
 const showInstallBanner = ref(false);
+
+const pwaSteps = [
+  "Open WhatsApp and go to the chat you want to analyze",
+  "Tap <strong>⋮ → More → Export Chat</strong>",
+  "Choose <strong>Without Media</strong>",
+  "In the share sheet, tap <strong>WCA</strong> — the chat loads automatically",
+];
+
+const browserSteps = [
+  "Open WhatsApp and go to the chat you want to analyze",
+  "Tap <strong>⋮ → More → Export Chat</strong>",
+  "Choose <strong>Without Media</strong> and save the <strong>.zip</strong> file",
+  "Come back here and tap <strong>Browse</strong> to load it",
+];
 
 function isMobile(): boolean {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -217,6 +354,8 @@ async function triggerInstall(): Promise<void> {
 }
 
 onMounted(async () => {
+  isPwa.value = isInStandaloneMode();
+
   // Check for iOS manually (no beforeinstallprompt on Safari)
   if (
     isMobile() &&
@@ -230,8 +369,6 @@ onMounted(async () => {
   window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
   // Handle incoming shared file from Web Share Target.
-  // The SW intercepts the POST at /wca/share-target, stashes the file in
-  // Cache API, then redirects here. We consume the cache entry and auto-analyze.
   try {
     const cache = await caches.open("share-target-v1");
     const response = await cache.match("/shared-file");
@@ -252,18 +389,22 @@ onBeforeUnmount(() => {
   window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 });
 
+async function sniffZip(f: File): Promise<boolean> {
+  const buf = await f.slice(0, 4).arrayBuffer();
+  const b = new Uint8Array(buf);
+  return b[0] === 0x50 && b[1] === 0x4b; // PK magic bytes
+}
+
 async function processFile(): Promise<void> {
   const f = Array.isArray(file.value) ? file.value[0] : file.value;
   if (!f) return;
   analyzing.value = true;
   errorMsg.value = "";
   try {
-    const name = f.name.toLowerCase();
-    if (!name.endsWith(".zip") && !name.endsWith(".txt"))
+    const isZip = await sniffZip(f);
+    if (!isZip && !f.name.toLowerCase().endsWith(".txt"))
       throw new Error("Invalid file type — use .zip or .txt exports.");
-    const text = name.endsWith(".zip")
-      ? await extractFromZip(f)
-      : await readAsText(f);
+    const text = isZip ? await extractFromZip(f) : await readAsText(f);
     analyzeChatContent(text);
   } catch (err) {
     errorMsg.value = err instanceof Error ? err.message : "Unknown error";
