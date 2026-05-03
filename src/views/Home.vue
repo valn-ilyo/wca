@@ -229,16 +229,19 @@ onMounted(async () => {
 
   window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-  // Handle incoming shared file from Web Share Target
-  const params = new URLSearchParams(location.search);
-  const sharedUrl = params.get("share-target");
-  if (!sharedUrl) return;
+  // Handle incoming shared file from Web Share Target.
+  // The SW intercepts the POST at /wca/share-target, stashes the file in
+  // Cache API, then redirects here. We consume the cache entry and auto-analyze.
   try {
-    const response = await fetch(sharedUrl);
+    const cache = await caches.open("share-target-v1");
+    const response = await cache.match("/shared-file");
+    if (!response) return;
+    await cache.delete("/shared-file"); // consume — one shot
     const blob = await response.blob();
-    const filename = new URL(sharedUrl).pathname.split("/").pop() ?? "chat.txt";
+    const filename = decodeURIComponent(
+      response.headers.get("X-Filename") ?? "chat-export",
+    );
     file.value = new File([blob], filename, { type: blob.type });
-    history.replaceState(null, "", location.pathname);
     await processFile();
   } catch {
     // share target handling failed — user can still pick manually
