@@ -11,8 +11,9 @@
             <th
               v-for="(name, idx) in names"
               :key="name"
-              class="font-weight-bold text-body-small"
+              class="font-weight-bold text-body-small text-truncate"
               :class="idx === 0 ? 'text-primary' : 'text-secondary'"
+              style="max-width: 100px"
             >
               {{ name }}
             </th>
@@ -20,10 +21,7 @@
         </thead>
         <tbody>
           <tr v-for="stat in statRows" :key="stat.label">
-            <td
-              class="text-medium-emphasis text-body-small d-flex align-center ga-2 py-2"
-            >
-              <v-icon :icon="stat.icon" size="14" />
+            <td class="text-medium-emphasis text-body-small py-2">
               {{ stat.label }}
             </td>
             <td
@@ -43,6 +41,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useDisplay } from "vuetify";
 import type { ParticipantStats } from "@/types/analytics";
 import { formatDuration } from "@/composables/useAnalyzer";
 
@@ -50,51 +49,44 @@ const props = defineProps<{
   participants: Record<string, ParticipantStats>;
 }>();
 
+const { mobile } = useDisplay();
 const names = computed(() => Object.keys(props.participants));
 
-const statRows = [
+const statRows = computed(() => [
   {
-    icon: "mdi-message-outline",
     label: "Messages",
     value: (n: string) => props.participants[n].messageCount.toLocaleString(),
   },
   {
-    icon: "mdi-text",
     label: "Words sent",
     value: (n: string) => props.participants[n].wordCount.toLocaleString(),
   },
   {
-    icon: "mdi-format-letter-case",
-    label: "Avg words / message",
+    label: mobile.value ? "Words / msg" : "Words per message",
     value: (n: string) => props.participants[n].avgWordsPerMessage.toFixed(1),
   },
   {
-    icon: "mdi-image-outline",
     label: "Media shared",
     value: (n: string) => props.participants[n].mediaCount.toLocaleString(),
   },
   {
-    icon: "mdi-link",
     label: "Links shared",
     value: (n: string) => props.participants[n].linkCount.toLocaleString(),
   },
   {
-    icon: "mdi-emoticon-outline",
     label: "Emojis used",
     value: (n: string) => props.participants[n].emojiCount.toLocaleString(),
   },
   {
-    icon: "mdi-reply",
-    label: "Avg response",
+    label: mobile.value ? "Avg response" : "Average response",
     value: (n: string) =>
       props.participants[n].avgResponseTime != null
         ? formatDuration(props.participants[n].avgResponseTime!)
         : "N/A",
   },
   {
-    icon: "mdi-chat-outline",
-    label: "Conversations started",
+    label: mobile.value ? "Convos started" : "Conversations started",
     value: (n: string) => props.participants[n].initiations.toLocaleString(),
   },
-];
+]);
 </script>

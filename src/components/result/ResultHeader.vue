@@ -1,15 +1,25 @@
 <template>
   <v-toolbar color="transparent" flat>
-    <v-spacer />
-    <div class="d-flex align-center ga-2">
-      <v-icon icon="custom:whatsapp" size="28" />
+    <template #prepend>
+      <v-btn
+        icon="mdi-arrow-left"
+        variant="text"
+        color="on-surface-variant"
+        @click="router.back()"
+      />
+    </template>
+    <template #title>
       <span
-        class="text-caption font-weight-bold text-primary text-uppercase"
+        class="text-caption font-weight-bold text-primary text-uppercase text-wrap"
         style="letter-spacing: 0.12em"
       >
         WhatsApp Chat Analyzer
       </span>
-    </div>
-    <v-spacer />
+    </template>
   </v-toolbar>
 </template>
+
+<script setup lang="ts">
+import { useRouter } from "vue-router";
+const router = useRouter();
+</script>

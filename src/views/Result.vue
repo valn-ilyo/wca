@@ -2,30 +2,28 @@
   <v-container class="pt-0">
     <ResultHeader />
 
-    <div>
-      <MasonryWall
-        :items="masonryItems"
-        :column-width="360"
-        :gap="16"
-        :min-columns="1"
-        :max-columns="2"
-        class="mb-4"
-      >
-        <template #default="{ item, index }">
-          <component
-            :is="item.component"
-            v-bind="item.props"
-            v-motion
-            :initial="{ opacity: 0, y: 24 }"
-            :enter="{
-              opacity: 1,
-              y: 0,
-              transition: { delay: 80 + index * 80, duration: 400 },
-            }"
-          />
-        </template>
-      </MasonryWall>
-    </div>
+    <MasonryWall
+      :items="masonryItems"
+      :column-width="360"
+      :gap="16"
+      :min-columns="1"
+      :max-columns="2"
+      class="mb-4"
+    >
+      <template #default="{ item, index }">
+        <component
+          :is="item.component"
+          v-bind="item.props"
+          v-motion
+          :initial="{ opacity: 0, y: 24 }"
+          :enter="{
+            opacity: 1,
+            y: 0,
+            transition: { delay: 80 + index * 80, duration: 400 },
+          }"
+        />
+      </template>
+    </MasonryWall>
   </v-container>
 </template>
 

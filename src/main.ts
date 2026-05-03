@@ -1,3 +1,18 @@
+import { registerSW } from "virtual:pwa-register";
+
+registerSW({
+  immediate: true,
+  onRegisteredSW(_swUrl, registration) {
+    if (!registration) return;
+    setInterval(
+      () => {
+        registration.update().catch(() => {});
+      },
+      60 * 60 * 1000,
+    );
+  },
+});
+
 import "vuetify/styles";
 import "@mdi/font/css/materialdesignicons.css";
 import { createApp } from "vue";
