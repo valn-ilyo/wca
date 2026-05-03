@@ -175,91 +175,66 @@
     </div>
 
     <!-- Help dialog -->
-    <v-dialog v-model="helpDialog" max-width="480">
+    <v-dialog v-model="helpDialog" max-width="480" scrollable>
       <v-card rounded="xl">
-        <template #title>
-          <span class="font-weight-bold">How to export a chat?</span>
-        </template>
+        <v-card-title class="font-weight-bold pt-4 px-4">
+          Export your chat
+        </v-card-title>
 
-        <!-- Installed PWA: share directly -->
-        <template v-if="isPwa">
-          <v-card-text class="pt-0">
+        <v-card-text class="pt-2">
+          <!-- Installed PWA: share directly -->
+          <template v-if="isPwa">
             <p class="text-body-2 text-medium-emphasis mb-3">
               Since you have WCA installed, you can share directly from
               WhatsApp:
             </p>
             <v-list density="compact" bg-color="transparent" class="pa-0">
-              <v-list-item
-                class="px-0"
-                min-height="32"
-                v-for="(step, i) in pwaSteps"
-                :key="i"
-              >
+              <v-list-item class="px-0" v-for="(step, i) in pwaSteps" :key="i">
                 <template #prepend>
-                  <v-avatar
-                    size="22"
-                    color="primary"
-                    class="mr-3 text-caption font-weight-bold"
+                  <span
+                    class="text-body-2 text-medium-emphasis font-weight-bold mr-3"
                   >
-                    {{ i + 1 }}
-                  </v-avatar>
+                    {{ i + 1 }}.
+                  </span>
                 </template>
-                <v-list-item-title
-                  class="text-body-2 text-wrap"
-                  v-html="step"
-                />
+                <v-list-item-title class="text-body-2 text-wrap">
+                  <span v-for="(part, j) in parseStep(step)" :key="j">
+                    <strong v-if="part.bold">{{ part.text }}</strong>
+                    <template v-else>{{ part.text }}</template>
+                  </span>
+                </v-list-item-title>
               </v-list-item>
             </v-list>
-          </v-card-text>
-        </template>
+          </template>
 
-        <!-- Browser: browse manually -->
-        <template v-else>
-          <v-card-text class="pt-0">
+          <!-- Browser: browse manually -->
+          <template v-else>
             <v-list density="compact" bg-color="transparent" class="pa-0">
               <v-list-item
                 class="px-0"
-                min-height="32"
                 v-for="(step, i) in browserSteps"
                 :key="i"
               >
                 <template #prepend>
-                  <v-avatar
-                    size="22"
-                    color="primary"
-                    class="mr-3 text-caption font-weight-bold"
+                  <span
+                    class="text-body-2 text-medium-emphasis font-weight-bold mr-3"
                   >
-                    {{ i + 1 }}
-                  </v-avatar>
+                    {{ i + 1 }}.
+                  </span>
                 </template>
-                <v-list-item-title
-                  class="text-body-2 text-wrap"
-                  v-html="step"
-                />
+                <v-list-item-title class="text-body-2 text-wrap">
+                  <span v-for="(part, j) in parseStep(step)" :key="j">
+                    <strong v-if="part.bold">{{ part.text }}</strong>
+                    <template v-else>{{ part.text }}</template>
+                  </span>
+                </v-list-item-title>
               </v-list-item>
             </v-list>
-            <v-alert
-              color="secondary"
-              variant="tonal"
-              density="compact"
-              class="mt-6"
-              icon="mdi-lightning-bolt"
-            >
-              <span class="text-body-2">
-                Install WCA as an app to share chats directly from WhatsApp — no
-                browsing needed.
-              </span>
-            </v-alert>
-          </v-card-text>
-        </template>
+          </template>
+        </v-card-text>
 
-        <v-card-actions class="justify-center">
-          <v-btn
-            variant="flat"
-            color="primary"
-            @click="helpDialog = false"
-            class="mb-2"
-          >
+        <v-card-actions class="justify-end px-4 pb-4">
+          <v-btn variant="flat" color="primary" @click="helpDialog = false">
             Got it
           </v-btn>
         </v-card-actions>
@@ -303,8 +278,23 @@ const browserSteps = [
   "Open WhatsApp and go to the chat you want to analyze",
   "Tap <strong>⋮ → More → Export Chat</strong>",
   "Choose <strong>Without Media</strong> and save the <strong>.zip</strong> file",
-  "Come back here and tap <strong>Browse</strong> to load it",
+  "Tap <strong>Browse</strong> to load it",
 ];
+
+function parseStep(step: string): { text: string; bold: boolean }[] {
+  const parts: { text: string; bold: boolean }[] = [];
+  const regex = /<strong>(.*?)<\/strong>/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(step)) !== null) {
+    if (match.index > last)
+      parts.push({ text: step.slice(last, match.index), bold: false });
+    parts.push({ text: match[1], bold: true });
+    last = match.index + match[0].length;
+  }
+  if (last < step.length) parts.push({ text: step.slice(last), bold: false });
+  return parts;
+}
 
 function isMobile(): boolean {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -339,7 +329,6 @@ async function triggerInstall(): Promise<void> {
 onMounted(async () => {
   isPwa.value = isInStandaloneMode();
 
-  // Check for iOS manually (no beforeinstallprompt on Safari)
   if (
     isMobile() &&
     /iPhone|iPad|iPod/i.test(navigator.userAgent) &&
@@ -351,12 +340,11 @@ onMounted(async () => {
 
   window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-  // Handle incoming shared file from Web Share Target.
   try {
     const cache = await caches.open("share-target-v1");
     const response = await cache.match("/shared-file");
     if (!response) return;
-    await cache.delete("/shared-file"); // consume — one shot
+    await cache.delete("/shared-file");
     const blob = await response.blob();
     const filename = decodeURIComponent(
       response.headers.get("X-Filename") ?? "chat-export",
