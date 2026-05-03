@@ -175,24 +175,11 @@
     </div>
 
     <!-- Help dialog -->
-    <v-dialog v-model="helpDialog" max-width="440">
+    <v-dialog v-model="helpDialog" max-width="480">
       <v-card rounded="xl">
-        <v-card-item>
-          <template #prepend>
-            <v-icon icon="mdi-chat-question-outline" color="primary" />
-          </template>
-          <v-card-title class="text-body-1 font-weight-semibold">
-            How to export a chat
-          </v-card-title>
-          <template #append>
-            <v-btn
-              icon="mdi-close"
-              variant="text"
-              size="small"
-              @click="helpDialog = false"
-            />
-          </template>
-        </v-card-item>
+        <template #title>
+          <span class="font-weight-bold">How to export a chat?</span>
+        </template>
 
         <!-- Installed PWA: share directly -->
         <template v-if="isPwa">
@@ -229,9 +216,6 @@
         <!-- Browser: browse manually -->
         <template v-else>
           <v-card-text class="pt-0">
-            <p class="text-body-2 text-medium-emphasis mb-3">
-              Export the chat from WhatsApp, then load it here:
-            </p>
             <v-list density="compact" bg-color="transparent" class="pa-0">
               <v-list-item
                 class="px-0"
@@ -255,10 +239,10 @@
               </v-list-item>
             </v-list>
             <v-alert
-              type="info"
+              color="secondary"
               variant="tonal"
               density="compact"
-              class="mt-4"
+              class="mt-6"
               icon="mdi-lightning-bolt"
             >
               <span class="text-body-2">
@@ -269,13 +253,12 @@
           </v-card-text>
         </template>
 
-        <v-card-actions>
-          <v-spacer />
+        <v-card-actions class="justify-center">
           <v-btn
             variant="flat"
             color="primary"
-            size="small"
             @click="helpDialog = false"
+            class="mb-2"
           >
             Got it
           </v-btn>
@@ -389,22 +372,18 @@ onBeforeUnmount(() => {
   window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 });
 
-async function sniffZip(f: File): Promise<boolean> {
-  const buf = await f.slice(0, 4).arrayBuffer();
-  const b = new Uint8Array(buf);
-  return b[0] === 0x50 && b[1] === 0x4b; // PK magic bytes
-}
-
 async function processFile(): Promise<void> {
   const f = Array.isArray(file.value) ? file.value[0] : file.value;
   if (!f) return;
   analyzing.value = true;
   errorMsg.value = "";
   try {
-    const isZip = await sniffZip(f);
-    if (!isZip && !f.name.toLowerCase().endsWith(".txt"))
+    const name = f.name.toLowerCase();
+    if (!name.endsWith(".zip") && !name.endsWith(".txt"))
       throw new Error("Invalid file type — use .zip or .txt exports.");
-    const text = isZip ? await extractFromZip(f) : await readAsText(f);
+    const text = name.endsWith(".zip")
+      ? await extractFromZip(f)
+      : await readAsText(f);
     analyzeChatContent(text);
   } catch (err) {
     errorMsg.value = err instanceof Error ? err.message : "Unknown error";
