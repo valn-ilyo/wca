@@ -9,9 +9,9 @@
       elevation="0"
       color="transparent"
     >
-      <v-row justify="center" class="mb-2">
+      <v-row justify="center">
         <v-col cols="12" class="text-center">
-          <img src="/icon.svg" alt="WhatsApp" height="44" class="mb-2" />
+          <img src="/icon.svg" alt="WhatsApp" height="44" />
           <h1 class="text-headline-small text-primary font-weight-bold">
             WHATSAPP CHAT ANALYZER
           </h1>
@@ -71,7 +71,7 @@
       rounded="xl"
       border
       variant="flat"
-      class="mt-4"
+      class="mt-2"
     >
       <!-- Android: native prompt available -->
       <template v-if="installPrompt">
@@ -241,6 +241,14 @@ onMounted(async () => {
     const filename = decodeURIComponent(
       response.headers.get("X-Filename") ?? "chat-export",
     );
+
+    // ── DEBUG: show raw file info so we can see what WhatsApp actually sends ──
+    const rawText = await blob.text();
+    const preview = rawText.split("\n").slice(0, 5).join(" | ");
+    errorMsg.value = `[DEBUG] name=${filename} type=${blob.type}\n${preview}`;
+    return; // ← remove this entire DEBUG block once format is confirmed
+    // ── END DEBUG ──
+
     file.value = new File([blob], filename, { type: blob.type });
     await processFile();
   } catch {
