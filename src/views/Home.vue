@@ -9,9 +9,9 @@
       elevation="0"
       color="transparent"
     >
-      <v-row justify="center" class="mb-2">
+      <v-row justify="center">
         <v-col cols="12" class="text-center">
-          <img src="/icon.svg" alt="WhatsApp" height="44" class="mb-2" />
+          <img src="/icon.svg" alt="WhatsApp" height="44" />
           <h1 class="text-headline-small text-primary font-weight-bold">
             WHATSAPP CHAT ANALYZER
           </h1>
@@ -71,7 +71,7 @@
       rounded="xl"
       border
       variant="flat"
-      class="mt-4"
+      class="mt-2"
     >
       <!-- Android: native prompt available -->
       <template v-if="installPrompt">
@@ -252,22 +252,18 @@ onBeforeUnmount(() => {
   window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 });
 
-async function sniffZip(f: File): Promise<boolean> {
-  const buf = await f.slice(0, 4).arrayBuffer();
-  const b = new Uint8Array(buf);
-  return b[0] === 0x50 && b[1] === 0x4b; // PK magic bytes
-}
-
 async function processFile(): Promise<void> {
   const f = Array.isArray(file.value) ? file.value[0] : file.value;
   if (!f) return;
   analyzing.value = true;
   errorMsg.value = "";
   try {
-    const isZip = await sniffZip(f);
-    if (!isZip && !f.name.toLowerCase().endsWith(".txt"))
+    const name = f.name.toLowerCase();
+    if (!name.endsWith(".zip") && !name.endsWith(".txt"))
       throw new Error("Invalid file type — use .zip or .txt exports.");
-    const text = isZip ? await extractFromZip(f) : await readAsText(f);
+    const text = name.endsWith(".zip")
+      ? await extractFromZip(f)
+      : await readAsText(f);
     analyzeChatContent(text);
   } catch (err) {
     errorMsg.value = err instanceof Error ? err.message : "Unknown error";

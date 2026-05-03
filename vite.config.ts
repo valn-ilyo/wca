@@ -46,13 +46,7 @@ export default defineConfig({
             files: [
               {
                 name: "chat",
-                accept: [
-                  "text/plain",
-                  ".txt",
-                  "application/zip",
-                  ".zip",
-                  "application/octet-stream",
-                ],
+                accept: ["application/zip", ".zip", "application/octet-stream"],
               },
             ],
           },
