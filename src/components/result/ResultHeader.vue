@@ -10,7 +10,7 @@
     <v-spacer />
 
     <span
-      class="text-title-medium font-weight-bold text-primary text-uppercase"
+      class="text-title-medium font-weight-bold text-primary text-uppercase text-center"
     >
       WhatsApp Chat Analyzer
     </span>

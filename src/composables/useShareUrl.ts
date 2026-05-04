@@ -18,7 +18,7 @@ export function useShareUrl() {
       // router.resolve returns e.g. /#/result?d=... with hash history —
       // prepend only origin (not pathname) to avoid double-slash.
       const resolved = router.resolve({ path: "/result", query: { d } });
-      const url = `${location.origin}${resolved.href}`;
+      const url = `${location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}${resolved.href}`;
 
       if (navigator.share) {
         // Native share sheet on mobile — no clipboard feedback needed.

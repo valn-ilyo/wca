@@ -43,7 +43,10 @@ const facts = computed(() => [
         <v-col
           v-for="(fact, i) in facts"
           :key="fact.label"
+          cols="6"
+          sm="3"
           class="fact-cell"
+          :class="{ 'fact-cell--last-row': i >= 2 }"
           v-motion
           :initial="{ opacity: 0, scale: 0.9 }"
           :enter="{
@@ -81,5 +84,8 @@ const facts = computed(() => [
 .fact-cell {
   border-right: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.fact-cell--last-row {
+  border-bottom: none;
 }
 </style>
