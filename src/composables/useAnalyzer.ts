@@ -390,13 +390,22 @@ const CONVERSATION_GAP_MS = 60 * 60 * 1000; // 1 hour
  * Date-time pattern detection
  * ───────────────────────────────────────────── */
 
+// Supported formats (index matters — used in convertToMMDDYY):
+//
+//  0 → M/D/YY,  H:MM AM/PM   e.g. 1/15/24, 10:30 AM   (US 12h 2-digit year)
+//  1 → M/D/YY,  HH:MM        e.g. 1/15/24, 22:30       (US 24h 2-digit year)
+//  2 → D/M/YY,  H:MM am/pm   e.g. 15/1/24, 10:30 am    (intl 12h 2-digit year)
+//  3 → D/M/YYYY,H:MM am/pm   e.g. 15/1/2024, 10:30 am  (intl 12h 4-digit year)
+//  4 → D/M/YYYY,HH:MM        e.g. 02/07/2025, 21:28     (intl 24h 4-digit year) ← NEW
+//
 // Note: no /g flag on any pattern — stateful lastIndex causes
 // .test() to alternate true/false on repeated calls with the same input
 const DATE_PATTERNS: RegExp[] = [
-  /^((\d{1,2}\/\d{1,2}\/\d{2}),\s(\d{1,2}:\d{2}\s[AP]M))/,
-  /^((\d{1,2}\/\d{1,2}\/\d{2}),\s(\d{2}:\d{2}))/,
-  /^((\d{1,2}\/\d{1,2}\/\d{2}),\s(\d{1,2}:\d{2}\s[ap]m))/,
-  /^((\d{1,2}\/\d{1,2}\/\d{4}),\s(\d{1,2}:\d{2}\s[ap]m))/,
+  /^((\d{1,2}\/\d{1,2}\/\d{2}),\s(\d{1,2}:\d{2}\s[AP]M))/, // 0
+  /^((\d{1,2}\/\d{1,2}\/\d{2}),\s(\d{2}:\d{2}))/, // 1
+  /^((\d{1,2}\/\d{1,2}\/\d{2}),\s(\d{1,2}:\d{2}\s[ap]m))/, // 2
+  /^((\d{1,2}\/\d{1,2}\/\d{4}),\s(\d{1,2}:\d{2}\s[ap]m))/, // 3
+  /^((\d{1,2}\/\d{1,2}\/\d{4}),\s(\d{2}:\d{2}))/, // 4 ← NEW
 ];
 
 export function detectDateTimePattern(
@@ -417,10 +426,17 @@ export function detectDateTimePattern(
 function convertToMMDDYY(dateStr: string, index: number): string {
   switch (index) {
     case 2: {
+      // D/M/YY → M/D/YY
       const [day, month, year] = dateStr.split("/");
       return `${month}/${day}/${year}`;
     }
     case 3: {
+      // D/M/YYYY → M/D/YY
+      const [day, month, year] = dateStr.split("/");
+      return `${month}/${day}/${year.slice(-2)}`;
+    }
+    case 4: {
+      // D/M/YYYY → M/D/YY  (same swap as case 3, 24h clock)
       const [day, month, year] = dateStr.split("/");
       return `${month}/${day}/${year.slice(-2)}`;
     }
