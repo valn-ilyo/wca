@@ -16,22 +16,20 @@
         auto-draw-easing="ease-out"
       />
       <div
-        class="d-flex justify-space-between text-body-small text-medium-emphasis mt-1 px-1"
+        class="d-flex align-center text-body-medium text-medium-emphasis mt-1"
+        style="padding: 0 10px"
       >
-        <span v-for="label in axisLabels" :key="label">{{ label }}</span>
-      </div>
-      <v-divider class="my-2" />
-      <div class="d-flex justify-space-between">
-        <v-chip
-          v-for="period in periods"
-          :key="period.label"
-          size="x-small"
-          variant="text"
-          class="text-medium-emphasis px-1"
-          :prepend-icon="period.icon"
-        >
-          {{ period.label }}
-        </v-chip>
+        <template v-for="(tick, i) in axisLabels" :key="tick">
+          <span>{{ tick }}</span>
+          <div
+            v-if="i < periods.length"
+            class="d-flex flex-grow-1 justify-center"
+          >
+            <v-icon size="small" class="text-medium-emphasis" color="secondary">
+              {{ periods[i].icon }}
+            </v-icon>
+          </div>
+        </template>
       </div>
     </v-card-text>
   </v-card>
@@ -41,26 +39,20 @@
 import { computed } from "vue";
 import type { HourlyDistribution } from "@/types/analytics";
 
-const props = defineProps<{ hourlyDistribution: HourlyDistribution }>();
+const props = defineProps<{
+  hourlyDistribution: HourlyDistribution;
+}>();
 
-// Always start from midnight (hour 0) so the chart reads morning → night.
-// We append hour 0's value at the end so the line smoothly closes back
-// to where it started — no cliff between the last bar and the first.
 const hourValues = computed(() => {
-  const raw = Array.from(
-    { length: 24 },
-    (_, i) => props.hourlyDistribution[i] ?? 0,
-  );
-  return [...raw, raw[0]]; // 25 points: 0–23 + 0 again to close the loop
+  return [...props.hourlyDistribution, props.hourlyDistribution[0]];
 });
 
-// Axis labels at hours 0, 6, 12, 18, and 0 again (circular cue).
 const axisLabels = ["0", "6", "12", "18", "24"];
 
 const periods = [
-  { label: "Night", icon: "mdi-weather-night" },
-  { label: "Morning", icon: "mdi-weather-sunrise" },
-  { label: "Afternoon", icon: "mdi-weather-sunny" },
-  { label: "Evening", icon: "mdi-weather-sunset" },
+  { icon: "mdi-weather-night" },
+  { icon: "mdi-weather-partly-cloudy" },
+  { icon: "mdi-weather-sunny" },
+  { icon: "mdi-weather-sunset" },
 ];
 </script>

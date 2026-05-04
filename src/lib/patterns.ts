@@ -28,8 +28,8 @@ export const URL_REGEX = /https?:\/\/[^\s]+/g;
 /** Matches the WhatsApp "edited" tag appended to modified messages. */
 export const EDITED_TAG_REGEX = /<This message was edited>/gi;
 
-/** Minimum gap (ms) between messages to count as a new conversation initiation. */
-export const CONVERSATION_GAP_MS = 60 * 60 * 1_000; // 1 hour
+/** Gap (ms) between messages that signals a new conversation session. */
+export const SESSION_GAP_MS = 4 * 60 * 60 * 1_000; // 4 hours
 
 /** One day in milliseconds. */
 export const ONE_DAY_MS = 86_400_000;

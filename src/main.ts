@@ -40,13 +40,31 @@ pinia.use(createPersistedState());
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: "/", component: Home },
+    { path: "/", component: Home, name: "home" },
     {
       path: "/result",
       component: Result,
-      beforeEnter: () => {
+      beforeEnter: async (to) => {
         const chat = useChatStore();
-        if (!chat.hasData) return "/";
+
+        // 1. Already hydrated — came from file upload or still in sessionStorage
+        if (chat.hasData) return;
+
+        // 2. Came from a share link — decode payload and hydrate the store
+        const d = to.query.d;
+        if (typeof d === "string" && d.length > 0) {
+          try {
+            const { decodePayload } = await import("./lib/sharePayload");
+            const analytics = await decodePayload(d);
+            chat.setAnalytics(analytics);
+            return; // allow navigation
+          } catch {
+            return "/"; // corrupt / tampered payload → go home
+          }
+        }
+
+        // 3. No data at all — block
+        return "/";
       },
     },
   ],

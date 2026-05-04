@@ -36,10 +36,12 @@ import ResultHeader from "@/components/result/ResultHeader.vue";
 import MessageShareCard from "@/components/result/MessageShareCard.vue";
 import ChatTimelineCard from "@/components/result/ChatTimelineCard.vue";
 import ActivityByHourCard from "@/components/result/ActivityByHourCard.vue";
+import ActivityByDayCard from "@/components/result/ActivityByDayCard.vue";
 import PerPersonCard from "@/components/result/PerPersonCard.vue";
 import TopWordsCard from "@/components/result/TopWordsCard.vue";
 import TopEmojisCard from "@/components/result/TopEmojisCard.vue";
 import FunFactsRow from "@/components/result/FunFactsRow.vue";
+import ConversationRhythmCard from "@/components/result/ConversationRhythmCard.vue";
 
 const chatStore = useChatStore();
 const analytics = computed(() => chatStore.analytics!);
@@ -52,7 +54,25 @@ const masonryItems = computed(() => [
   { component: ChatTimelineCard, props: { analytics: analytics.value } },
   {
     component: ActivityByHourCard,
-    props: { hourlyDistribution: analytics.value.hourlyDistribution },
+    props: {
+      hourlyDistribution: analytics.value.hourlyDistribution,
+    },
+  },
+  {
+    component: ActivityByDayCard,
+    props: {
+      dowDistribution: analytics.value.dowDistribution,
+    },
+  },
+  {
+    component: ConversationRhythmCard,
+    props: {
+      sessionCount: analytics.value.sessionCount,
+      avgSessionLength: analytics.value.avgSessionLength,
+      maxSessionLength: analytics.value.maxSessionLength,
+      averageMessagesPerDay: analytics.value.averageMessagesPerDay,
+      averageResponseTime: analytics.value.averageResponseTime,
+    },
   },
   {
     component: PerPersonCard,
@@ -67,7 +87,6 @@ const masonryItems = computed(() => [
       totalWords: analytics.value.totalWords,
       mediaCount: analytics.value.mediaCount,
       linkCount: analytics.value.linkCount,
-      longestSilenceDays: analytics.value.longestSilenceDays,
     },
   },
 ]);

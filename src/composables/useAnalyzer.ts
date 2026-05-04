@@ -11,7 +11,7 @@ import {
   EMOJI_REGEX,
   URL_REGEX,
   EDITED_TAG_REGEX,
-  CONVERSATION_GAP_MS,
+  SESSION_GAP_MS,
   ONE_DAY_MS,
   MAX_REPLY_GAP_S,
 } from "@/lib/patterns";
@@ -86,6 +86,11 @@ interface MessageState {
   longestStreak: number;
   prevDayMs: number;
   longestSilenceMs: number;
+  // Session tracking
+  sessionCount: number;
+  currentSessionSize: number;
+  maxSessionLength: number;
+  sessionSizes: number[];
 }
 
 function createMessageState(): MessageState {
@@ -101,6 +106,10 @@ function createMessageState(): MessageState {
     longestStreak: 0,
     prevDayMs: 0,
     longestSilenceMs: 0,
+    sessionCount: 0,
+    currentSessionSize: 0,
+    maxSessionLength: 0,
+    sessionSizes: [],
   };
 }
 
@@ -160,9 +169,13 @@ function processMatch(
   }
 
   updateSilenceTracking(state, timestamp);
+  updateSessionTracking(state, timestamp);
   updateResponseTime(state, sender, timestamp);
   updateInitiations(state, analytics, sender, timestamp);
   updateHourlyDistribution(analytics, hour);
+
+  // Day-of-week distribution: 0 = Sunday, 6 = Saturday
+  analytics.dowDistribution[date.getDay()]++;
 
   state.lastSender = sender;
   state.lastTimestamp = timestamp;
@@ -228,6 +241,26 @@ function updateSilenceTracking(state: MessageState, timestamp: number): void {
   }
 }
 
+function updateSessionTracking(state: MessageState, timestamp: number): void {
+  const isNewSession =
+    !state.lastTimestamp ||
+    timestamp - state.lastTimestamp >= SESSION_GAP_MS;
+
+  if (isNewSession) {
+    // Close the previous session before opening a new one
+    if (state.currentSessionSize > 0) {
+      state.sessionSizes.push(state.currentSessionSize);
+      if (state.currentSessionSize > state.maxSessionLength) {
+        state.maxSessionLength = state.currentSessionSize;
+      }
+    }
+    state.sessionCount++;
+    state.currentSessionSize = 1;
+  } else {
+    state.currentSessionSize++;
+  }
+}
+
 function updateResponseTime(
   state: MessageState,
   sender: string,
@@ -249,7 +282,7 @@ function updateInitiations(
 ): void {
   if (
     !state.lastTimestamp ||
-    timestamp - state.lastTimestamp >= CONVERSATION_GAP_MS
+    timestamp - state.lastTimestamp >= SESSION_GAP_MS
   ) {
     analytics.participants[sender].initiations++;
   }
@@ -259,8 +292,7 @@ function updateHourlyDistribution(
   analytics: ChatAnalytics,
   hour: number,
 ): void {
-  analytics.hourlyDistribution[hour] =
-    (analytics.hourlyDistribution[hour] ?? 0) + 1;
+  analytics.hourlyDistribution[hour]++;
   if (hour >= 6 && hour < 12) analytics.activityDistribution.Morning++;
   else if (hour >= 12 && hour < 18) analytics.activityDistribution.Afternoon++;
   else if (hour >= 18 && hour < 22) analytics.activityDistribution.Evening++;
@@ -286,6 +318,23 @@ function aggregateResults(analytics: ChatAnalytics, state: MessageState): void {
     }
   });
 
+  // Finalise the last open session
+  if (state.currentSessionSize > 0) {
+    state.sessionSizes.push(state.currentSessionSize);
+    if (state.currentSessionSize > state.maxSessionLength) {
+      state.maxSessionLength = state.currentSessionSize;
+    }
+  }
+  analytics.sessionCount = state.sessionCount;
+  analytics.maxSessionLength = state.maxSessionLength;
+  analytics.avgSessionLength =
+    state.sessionSizes.length > 0
+      ? Math.round(
+          state.sessionSizes.reduce((a, b) => a + b, 0) /
+            state.sessionSizes.length,
+        )
+      : 0;
+
   // Sort participants by message count descending
   analytics.participants = Object.fromEntries(
     Object.entries(analytics.participants).sort(
@@ -297,7 +346,8 @@ function aggregateResults(analytics: ChatAnalytics, state: MessageState): void {
   state.responseTimesPerParticipant.forEach((times, sender) => {
     if (times.length > 0 && analytics.participants[sender]) {
       const avg = times.reduce((a, b) => a + b, 0) / times.length;
-      analytics.participants[sender].avgResponseTime = avg;
+      analytics.participants[sender].avgResponseTime =
+        Math.round(avg * 10) / 10;
     }
   });
 
@@ -378,9 +428,11 @@ export function extractChatAnalytics(
     averageMessagesPerDay: 0,
     participants: {},
     activityDistribution: { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 },
-    hourlyDistribution: Object.fromEntries(
-      Array.from({ length: 24 }, (_, i) => [i, 0]),
-    ),
+    hourlyDistribution: Array(24).fill(0),
+    dowDistribution: [0, 0, 0, 0, 0, 0, 0],
+    sessionCount: 0,
+    avgSessionLength: 0,
+    maxSessionLength: 0,
     topWords: [],
     topEmojis: [],
   };

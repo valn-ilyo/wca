@@ -18,8 +18,9 @@
       <v-progress-linear
         :model-value="activePct"
         color="primary"
-        bg-color="surface-variant"
+        bg-color="primary"
         rounded="pill"
+        :height="10"
         class="mb-2"
       />
 
@@ -54,12 +55,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useDisplay } from "vuetify";
 import type { ChatAnalytics } from "@/types/analytics";
 import { normalizeDays } from "@/composables/useAnalyzer";
 
 const props = defineProps<{ analytics: ChatAnalytics }>();
-const { mobile } = useDisplay();
 
 const activePct = computed(
   () => (props.analytics.activeDays / props.analytics.totalDays) * 100,
@@ -73,14 +72,13 @@ const rows = computed(() => [
     label: "Active days",
     value: `${props.analytics.activeDays} of ${props.analytics.totalDays}`,
   },
-  {
-    label: mobile.value ? "Msgs / day" : "Messages / day",
-    value: String(props.analytics.averageMessagesPerDay),
-  },
-  {
-    label: mobile.value ? "Avg response" : "Average response",
-    value: props.analytics.averageResponseTime,
-  },
   { label: "Longest streak", value: `${props.analytics.longestStreak} days` },
+  {
+    label: "Longest silence",
+    value:
+      props.analytics.longestSilenceDays === 1
+        ? "1 day"
+        : `${props.analytics.longestSilenceDays} days`,
+  },
 ]);
 </script>

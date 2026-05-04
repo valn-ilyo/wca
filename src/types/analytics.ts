@@ -5,9 +5,7 @@ export interface ActivityDistribution {
   Night: number;
 }
 
-export interface HourlyDistribution {
-  [hour: number]: number;
-}
+export type HourlyDistribution = number[];
 
 export interface ParticipantStats {
   messageCount: number;
@@ -18,7 +16,7 @@ export interface ParticipantStats {
   linkCount: number;
   emojiCount: number;
   avgResponseTime: number | null; // seconds, null if never responded
-  initiations: number; // conversations started (gap ≥ 1 h)
+  initiations: number; // sessions opened (gap >= 4 h, aligns with SESSION_GAP_MS)
 }
 
 export interface TopWord {
@@ -43,12 +41,16 @@ export interface ChatAnalytics {
   busiestDay: string;
   busiestDayCount: number;
   longestStreak: number;
-  longestSilenceDays: number; // longest gap between any two messages, in days
+  longestSilenceDays: number;
   averageResponseTime: string;
   averageMessagesPerDay: number;
   participants: Record<string, ParticipantStats>;
   activityDistribution: ActivityDistribution;
   hourlyDistribution: HourlyDistribution;
+  dowDistribution: number[];
+  sessionCount: number;
+  avgSessionLength: number;
+  maxSessionLength: number;
   topWords: TopWord[];
   topEmojis: TopEmoji[];
 }
