@@ -11,7 +11,7 @@
             <th
               v-for="(name, idx) in names"
               :key="name"
-              class="font-weight-bold text-body-small text-truncate"
+              class="font-weight-bold text-body-small text-wrap"
               :class="idx === 0 ? 'text-primary' : 'text-secondary'"
               style="max-width: 100px"
             >
