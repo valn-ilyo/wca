@@ -247,7 +247,7 @@ function processTextMessage(
     // words (Hindi, Arabic, accented Latin, etc.) are kept rather than
     // reduced to empty strings by the old /[^a-z]/g pattern.
     const lw = w.toLowerCase().replace(/[^\p{L}]/gu, "");
-    if (lw.length > 1 && !STOP_WORDS.has(lw)) inc(state.wordFreq, lw);
+    if (lw.length > 2 && !STOP_WORDS.has(lw)) inc(state.wordFreq, lw);
   }
 
   const emojis = extractEmojis(body);
