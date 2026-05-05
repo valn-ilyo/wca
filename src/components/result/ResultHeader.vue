@@ -17,11 +17,12 @@
 
     <v-spacer />
 
-    <!-- Tooltip only activates on the clipboard path (desktop).            -->
-    <!-- On mobile, navigator.share fires and copied never becomes true.    -->
+    <!-- Tooltip shows "Copied!" on clipboard success, or an error message   -->
+    <!-- if the clipboard write was blocked (e.g. HTTP, permissions denied). -->
     <v-tooltip
-      :model-value="copied"
-      text="Copied!"
+      :model-value="copied || !!shareError"
+      :text="shareError || 'Copied!'"
+      :color="shareError ? 'error' : undefined"
       location="bottom"
       :open-on-hover="false"
       :open-on-focus="false"
@@ -46,5 +47,5 @@ import { useRouter } from "vue-router";
 import { useShareUrl } from "@/composables/useShareUrl";
 
 const router = useRouter();
-const { share, sharing, copied } = useShareUrl();
+const { share, sharing, copied, shareError } = useShareUrl();
 </script>

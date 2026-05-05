@@ -40,11 +40,20 @@ function isSystemMessage(body: string): boolean {
  * with a date stamp. Without this pass the regex engine (with /m flag) would
  * silently discard continuation lines, losing part of every multi-line message.
  */
+/**
+ * A line that opens a new WhatsApp message always starts with a date in
+ * D/M/YY or DD/MM/YYYY form.  The old heuristic (/^\d/) was too broad:
+ * any continuation line beginning with a number (e.g. "30 safety pins",
+ * "20 per piece", "30 x 10 = 300") was incorrectly pushed as a new entry,
+ * which then failed the full date-time regex and was silently dropped.
+ */
+const DATE_LINE_PREFIX = /^\d{1,2}\/\d{1,2}\/\d{2,4}[, ]/;
+
 function collapseMultilineMessages(content: string): string {
   const lines = content.split("\n");
   const out: string[] = [];
   for (const line of lines) {
-    if (/^\d/.test(line) || out.length === 0) {
+    if (DATE_LINE_PREFIX.test(line) || out.length === 0) {
       out.push(line);
     } else {
       out[out.length - 1] += " " + line;
@@ -143,12 +152,18 @@ function processMatch(
   patternIndex: number,
 ): void {
   const dateRaw = normalizeDate(match[2], patternIndex);
-  const timeRaw = match[3];
+  // Normalise am/pm to uppercase — Safari's Date.parse rejects lowercase.
+  const timeRaw = match[3].toUpperCase();
   const sender = match[4].trim();
   const body = (match[5] ?? "").trim();
-  const isMedia = body.toLowerCase() === "<media omitted>";
+  // Any <… omitted> body is media (covers <Media omitted>, <Video note omitted>, etc.)
+  const isMedia = /^<[^>]+ omitted>$/i.test(body);
   const isSystem = isSystemMessage(body);
-  const timestamp = Date.parse(`${dateRaw} ${timeRaw}`) || 0;
+  // Skip messages whose timestamp cannot be parsed rather than silently
+  // assigning them to epoch (Jan 1 1970) which corrupts every metric.
+  const timestamp = Date.parse(`${dateRaw} ${timeRaw}`);
+  if (isNaN(timestamp)) return;
+  analytics.messageCount++;
   const date = new Date(timestamp);
   const hour = date.getHours();
   const dateStr = date.toDateString();
@@ -228,7 +243,10 @@ function processTextMessage(
   analytics.totalWords += words.length;
 
   for (const w of words) {
-    const lw = w.toLowerCase().replace(/[^a-z]/g, "");
+    // Strip non-letter characters using Unicode-aware class so non-English
+    // words (Hindi, Arabic, accented Latin, etc.) are kept rather than
+    // reduced to empty strings by the old /[^a-z]/g pattern.
+    const lw = w.toLowerCase().replace(/[^\p{L}]/gu, "");
     if (lw.length > 1 && !STOP_WORDS.has(lw)) inc(state.wordFreq, lw);
   }
 
@@ -418,7 +436,7 @@ export function extractChatAnalytics(
     endDate: new Date(endDateRaw).toDateString(),
     totalDays: dateDiff(startDateRaw, endDateRaw),
     activeDays: 0,
-    messageCount: matches.length,
+    messageCount: 0, // incremented inside processMatch only for parseable messages
     totalWords: 0,
     mediaCount: 0,
     linkCount: 0,

@@ -85,7 +85,17 @@ const facts = computed(() => [
   border-right: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-bottom: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
+/* Mobile (2-column): items 2 & 3 are the bottom row — remove their border. */
 .fact-cell--last-row {
   border-bottom: none;
+}
+/*
+ * sm and above (4-column, single row): ALL cells are in the last (only) row.
+ * Vuetify's sm breakpoint is 600 px, matching the cols="6" sm="3" grid above.
+ */
+@media (min-width: 600px) {
+  .fact-cell {
+    border-bottom: none;
+  }
 }
 </style>

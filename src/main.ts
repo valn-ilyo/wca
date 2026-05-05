@@ -55,7 +55,7 @@ const router = createRouter({
         if (typeof d === "string" && d.length > 0) {
           try {
             const { decodePayload } = await import("./lib/sharePayload");
-            const analytics = await decodePayload(d);
+            const analytics = decodePayload(d); // sync — no await needed
             chat.setAnalytics(analytics);
             return; // allow navigation
           } catch {

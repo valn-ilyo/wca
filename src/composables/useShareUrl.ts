@@ -8,11 +8,13 @@ export function useShareUrl() {
   const chatStore = useChatStore();
   const sharing = ref(false);
   const copied = ref(false);
+  const shareError = ref("");
 
   async function share() {
     if (!chatStore.analytics) return;
 
     sharing.value = true;
+    shareError.value = "";
 
     try {
       const d = encodePayload(chatStore.analytics); // sync — no await needed
@@ -23,9 +25,14 @@ export function useShareUrl() {
       if (navigator.share) {
         await navigator.share({ title: "WhatsApp Chat Analysis", url });
       } else {
-        await navigator.clipboard.writeText(url);
-        copied.value = true;
-        setTimeout(() => (copied.value = false), 2500);
+        try {
+          await navigator.clipboard.writeText(url);
+          copied.value = true;
+          setTimeout(() => (copied.value = false), 2500);
+        } catch {
+          shareError.value = "Couldn't copy link — please copy it manually.";
+          setTimeout(() => (shareError.value = ""), 4000);
+        }
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
@@ -38,5 +45,5 @@ export function useShareUrl() {
     }
   }
 
-  return { share, sharing, copied };
+  return { share, sharing, copied, shareError };
 }

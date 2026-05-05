@@ -35,9 +35,15 @@ export function useFileProcessor() {
   /** Unzips a WhatsApp export and returns the chat text. */
   async function extractFromZip(f: File): Promise<string> {
     const zip = await JSZip.loadAsync(f);
-    const chatFile = Object.values(zip.files).find((e) =>
-      e.name.toLowerCase().startsWith("whatsapp chat with"),
-    );
+    const entries = Object.values(zip.files);
+
+    // Primary: match the English export filename prefix.
+    // Fallback: any .txt file in the archive — covers non-English locales
+    // (e.g. "WhatsApp Chat mit …" in German, "Chat de WhatsApp con …" in Spanish).
+    const chatFile =
+      entries.find((e) => e.name.toLowerCase().startsWith("whatsapp chat with")) ??
+      entries.find((e) => e.name.toLowerCase().endsWith(".txt") && !e.dir);
+
     if (!chatFile) throw new Error("No WhatsApp chat file found in the ZIP.");
     return readAsText(await chatFile.async("blob"));
   }

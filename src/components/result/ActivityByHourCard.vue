@@ -44,6 +44,10 @@ const props = defineProps<{
 }>();
 
 const hourValues = computed(() => {
+  // Append hour[0] (midnight) at position 24 so the sparkline wraps around
+  // visually — the curve closes back to the midnight level at the right edge.
+  // This produces 25 data points; the axis labels still run 0 → 24 because
+  // the first and last points represent the same hour.
   return [...props.hourlyDistribution, props.hourlyDistribution[0]];
 });
 

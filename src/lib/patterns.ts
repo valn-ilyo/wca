@@ -10,15 +10,19 @@ export const SYSTEM_MESSAGE_PATTERNS: RegExp[] = [
   /^missed (voice|video) call$/i,
   /^null$/i,
   /messages and calls are end-to-end encrypted/i,
-  /changed (the|their|this)/i,
   /added you/i,
-  /left$/i,
+  // NOTE: "/left$/i" and "/changed (the|their|this)/i" were removed.
+  // Group-leave and group-change events appear WITHOUT the "sender: body"
+  // colon format in real exports, so they never reach this filter.
+  // Those patterns were firing on legitimate user messages like
+  // "I got 1 year left" and "Hendrix changed the sound of rock music".
 ];
 
 /**
- * Unicode emoji matcher.
- * No /g flag — callers should recreate with /gu when using matchAll/match.
- * Kept without /g here to document intent; each use site adds flags as needed.
+ * Unicode emoji matcher — /gu flags intentionally present so .match() and
+ * .replace() iterate all occurrences.  Do NOT use with .test() or .exec()
+ * in a loop without resetting lastIndex; both String methods (match/replace)
+ * handle this correctly and are the only call-sites.
  */
 export const EMOJI_REGEX = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
 
