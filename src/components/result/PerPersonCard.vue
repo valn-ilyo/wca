@@ -7,13 +7,13 @@
       <v-table density="compact">
         <thead>
           <tr>
-            <th class="text-medium-emphasis" style="width: 40%"></th>
+            <th class="text-medium-emphasis"></th>
             <th
               v-for="(name, idx) in names"
               :key="name"
               class="font-weight-bold text-body-small text-wrap"
               :class="idx === 0 ? 'text-primary' : 'text-secondary'"
-              style="max-width: 100px"
+              style="min-width: 60px"
             >
               {{ name }}
             </th>
@@ -28,6 +28,7 @@
               v-for="(name, idx) in names"
               :key="name"
               class="text-body-small font-weight-bold"
+              style="white-space: nowrap"
               :class="idx === 0 ? 'text-primary' : 'text-secondary'"
             >
               {{ stat.value(name) }}
@@ -38,20 +39,16 @@
     </v-card-text>
   </v-card>
 </template>
-
 <script setup lang="ts">
 import { computed } from "vue";
 import { useDisplay } from "vuetify";
 import type { ParticipantStats } from "@/types/analytics";
 import { formatDuration } from "@/composables/useAnalyzer";
-
 const props = defineProps<{
   participants: Record<string, ParticipantStats>;
 }>();
-
 const { mobile } = useDisplay();
 const names = computed(() => Object.keys(props.participants));
-
 const statRows = computed(() => [
   {
     label: "Messages",

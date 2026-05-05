@@ -11,25 +11,28 @@ export function useShareUrl() {
 
   async function share() {
     if (!chatStore.analytics) return;
+
     sharing.value = true;
 
     try {
-      const d = await encodePayload(chatStore.analytics);
-      // router.resolve returns e.g. /#/result?d=... with hash history —
-      // prepend only origin (not pathname) to avoid double-slash.
+      const d = encodePayload(chatStore.analytics); // sync — no await needed
+
       const resolved = router.resolve({ path: "/result", query: { d } });
       const url = `${location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}${resolved.href}`;
 
       if (navigator.share) {
-        // Native share sheet on mobile — no clipboard feedback needed.
         await navigator.share({ title: "WhatsApp Chat Analysis", url });
       } else {
         await navigator.clipboard.writeText(url);
         copied.value = true;
         setTimeout(() => (copied.value = false), 2500);
       }
-    } catch {
-      // User cancelled native share or clipboard was denied — silently ignore.
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // user cancelled native share sheet — expected, ignore
+      } else {
+        console.error("[useShareUrl] share error:", err);
+      }
     } finally {
       sharing.value = false;
     }

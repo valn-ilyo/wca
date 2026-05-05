@@ -189,7 +189,10 @@ function updateDayTracking(
   if (!state.activeDaySet.has(dateStr)) {
     state.activeDaySet.add(dateStr);
     state.dayMessageCount.set(dateStr, 0);
-    if (state.prevDayMs && dayMs - state.prevDayMs === ONE_DAY_MS) {
+    if (
+      state.prevDayMs &&
+      Math.round((dayMs - state.prevDayMs) / ONE_DAY_MS) === 1
+    ) {
       state.currentStreak++;
     } else {
       state.currentStreak = 1;
@@ -226,7 +229,7 @@ function processTextMessage(
 
   for (const w of words) {
     const lw = w.toLowerCase().replace(/[^a-z]/g, "");
-    if (lw.length > 2 && !STOP_WORDS.has(lw)) inc(state.wordFreq, lw);
+    if (lw.length > 1 && !STOP_WORDS.has(lw)) inc(state.wordFreq, lw);
   }
 
   const emojis = extractEmojis(body);
@@ -243,8 +246,7 @@ function updateSilenceTracking(state: MessageState, timestamp: number): void {
 
 function updateSessionTracking(state: MessageState, timestamp: number): void {
   const isNewSession =
-    !state.lastTimestamp ||
-    timestamp - state.lastTimestamp >= SESSION_GAP_MS;
+    !state.lastTimestamp || timestamp - state.lastTimestamp >= SESSION_GAP_MS;
 
   if (isNewSession) {
     // Close the previous session before opening a new one
@@ -295,7 +297,7 @@ function updateHourlyDistribution(
   analytics.hourlyDistribution[hour]++;
   if (hour >= 6 && hour < 12) analytics.activityDistribution.Morning++;
   else if (hour >= 12 && hour < 18) analytics.activityDistribution.Afternoon++;
-  else if (hour >= 18 && hour < 22) analytics.activityDistribution.Evening++;
+  else if (hour >= 18) analytics.activityDistribution.Evening++;
   else analytics.activityDistribution.Night++;
 }
 
@@ -306,7 +308,7 @@ function updateHourlyDistribution(
 function aggregateResults(analytics: ChatAnalytics, state: MessageState): void {
   analytics.activeDays = state.activeDaySet.size;
   analytics.longestStreak = state.longestStreak;
-  analytics.longestSilenceDays = Math.floor(
+  analytics.longestSilenceDays = Math.round(
     state.longestSilenceMs / ONE_DAY_MS,
   );
 
