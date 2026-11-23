@@ -6,6 +6,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
  * Returns reactive state and handlers ready to bind in the template:
  * - `isPwa`             — whether the app is running in standalone/installed mode
  * - `isIos`            — whether the device is iOS (needs manual Add to Home Screen)
+ * - `isFirefoxAndroid`— Firefox on Android (installable, but no install-prompt event)
  * - `installPrompt`    — the captured beforeinstallprompt event (null on iOS / unsupported)
  * - `showInstallBanner`— whether the install banner should be visible
  * - `triggerInstall()` — calls the native install prompt and handles the outcome
@@ -13,6 +14,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 export function usePwaInstall() {
   const isPwa = ref(false);
   const isIos = ref(false);
+  const isFirefoxAndroid = ref(false);
   const installPrompt = ref<Event | null>(null);
   const showInstallBanner = ref(false);
 
@@ -54,6 +56,13 @@ export function usePwaInstall() {
       showInstallBanner.value = true;
     }
 
+    // Firefox for Android can install PWAs but never fires `beforeinstallprompt`,
+    // so show manual instructions instead.
+    if (/Android/i.test(navigator.userAgent) && /Firefox\//i.test(navigator.userAgent) && !isInStandaloneMode()) {
+      isFirefoxAndroid.value = true;
+      showInstallBanner.value = true;
+    }
+
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
   });
 
@@ -64,6 +73,7 @@ export function usePwaInstall() {
   return {
     isPwa,
     isIos,
+    isFirefoxAndroid,
     installPrompt,
     showInstallBanner,
     triggerInstall,
