@@ -23,6 +23,7 @@
     <PwaInstallBanner
       :show="showInstallBanner"
       :has-install-prompt="!!installPrompt"
+      :is-firefox-android="isFirefoxAndroid"
       :is-ios="isIos"
       @install="triggerInstall"
       @dismiss="showInstallBanner = false"
@@ -46,7 +47,7 @@ import HelpDialog from "@/components/home/HelpDialog.vue";
 
 const helpDialog = ref(false);
 
-const { isPwa, isIos, installPrompt, showInstallBanner, triggerInstall } = usePwaInstall();
+const { isPwa, isIos, isFirefoxAndroid, installPrompt, showInstallBanner, triggerInstall } = usePwaInstall();
 const { file, analyzing, errorMsg, processFile } = useFileProcessor();
 
 // Handle PWA share-target: if the app was opened via a shared file, load it automatically
