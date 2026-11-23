@@ -32,6 +32,18 @@
       </v-card-item>
     </template>
 
+    <!-- Firefox Android: no prompt API, give manual instructions -->
+    <template v-else-if="isFirefoxAndroid">
+      <v-card-item>
+        <template #prepend>
+          <v-icon icon="mdi-firefox" color="primary" />
+        </template>
+        <v-card-title class="text-body-2 font-weight-medium">
+          Install the app
+        </v-card-title>
+      </v-card-item>
+    </template>
+
     <!-- Shared description -->
     <v-card-text class="pt-0">
       <span class="text-body-2 text-medium-emphasis">
@@ -72,6 +84,32 @@
           </v-list-item-title>
         </v-list-item>
       </v-list>
+
+      <!-- Firefox Android steps -->
+      <v-list
+        v-if="isFirefoxAndroid && !hasInstallPrompt"
+        density="compact"
+        bg-color="transparent"
+        class="pa-0 mt-2"
+      >
+        <v-list-item class="px-0" min-height="28">
+          <template #prepend>
+            <span class="text-body-2 text-medium-emphasis mr-3">1.</span>
+          </template>
+          <v-list-item-title class="text-body-2 text-medium-emphasis text-wrap">
+            Tap the <v-icon size="14" icon="mdi-dots-vertical" />
+            <strong>menu</strong> in Firefox
+          </v-list-item-title>
+        </v-list-item>
+        <v-list-item class="px-0" min-height="28">
+          <template #prepend>
+            <span class="text-body-2 text-medium-emphasis mr-3">2.</span>
+          </template>
+          <v-list-item-title class="text-body-2 text-medium-emphasis text-wrap">
+            Tap <strong>Install</strong> (or <strong>Add to Home screen</strong>)
+          </v-list-item-title>
+        </v-list-item>
+      </v-list>
     </v-card-text>
 
     <!-- Shared actions -->
@@ -98,6 +136,7 @@ defineProps<{
   show: boolean;
   hasInstallPrompt: boolean;
   isIos: boolean;
+  isFirefoxAndroid?: boolean;
 }>();
 
 defineEmits<{
